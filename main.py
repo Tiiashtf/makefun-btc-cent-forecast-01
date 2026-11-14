@@ -92,6 +92,12 @@ def forecast(prices):
 
     # Extrapolate the fitted line to the target minute, then damp the move.
     trend = math.exp(intercept + slope * (n - 1 + HORIZON_MINUTES))
+    # Keep the extrapolated trend itself sane before damping: never let it
+    # run more than 20% from the checkpoint close, so an extreme slope in
+    # a pathological window cannot dominate the damped move. (The 5% cap
+    # below remains the final guard; on every backtested window the trend
+    # stays far inside this bound, so this changes no verified forecast.)
+    trend = min(last * 1.20, max(last * 0.80, trend))
     guess = last + DAMPING * (trend - last)
 
     # Safety cap: never move more than 5% from the checkpoint close.
